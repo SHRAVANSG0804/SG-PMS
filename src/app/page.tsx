@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { Logo } from "@/components/logo";
 import { APP_NAME } from "@/lib/constants";
+import { isClerkConfigured, missingEnv } from "@/lib/config";
 
 const FEATURES = [
   {
@@ -24,7 +25,9 @@ const FEATURES = [
 const STEPS = ["Goals set", "Goals approved", "Self-appraisal", "Manager review", "Completed"];
 
 export default async function LandingPage() {
-  const { userId } = await auth();
+  const configured = isClerkConfigured();
+  const missing = missingEnv();
+  const { userId } = configured ? await auth() : { userId: null };
   return (
     <div className="flex min-h-screen flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
@@ -33,6 +36,22 @@ export default async function LandingPage() {
           {userId ? "Open app" : "Sign in"}
         </Link>
       </header>
+
+      {missing.length > 0 && (
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            <p className="font-semibold">Setup incomplete — add these environment variables, then redeploy:</p>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {missing.map((name) => (
+                <li key={name}>
+                  <code className="rounded bg-white px-2 py-0.5 text-xs ring-1 ring-amber-200">{name}</code>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs">Vercel → Project → Settings → Environment Variables. {configured ? "" : "Sign-in is disabled until the Clerk keys are set."}</p>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1">
         <section className="mx-auto max-w-4xl px-4 pt-12 pb-16 text-center sm:px-6 sm:pt-20">

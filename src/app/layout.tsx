@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
+import { isClerkConfigured } from "@/lib/config";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,11 +16,13 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <ClerkProvider appearance={{ variables: { colorPrimary: "#4f46e5" } }}>
-      <html lang="en">
-        <body className="min-h-screen">{children}</body>
-      </html>
-    </ClerkProvider>
+  const page = (
+    <html lang="en">
+      <body className="min-h-screen">{children}</body>
+    </html>
   );
+  // Without Clerk keys we still render (landing page shows what is missing)
+  // instead of failing the whole build.
+  if (!isClerkConfigured()) return page;
+  return <ClerkProvider appearance={{ variables: { colorPrimary: "#4f46e5" } }}>{page}</ClerkProvider>;
 }
